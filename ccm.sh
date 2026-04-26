@@ -188,6 +188,7 @@ HAIKU_MODEL=claude-haiku-4-5-20251001
 MINIMAX_MODEL=MiniMax-M2.5
 SEED_MODEL=ark-code-latest
 STEPFUN_MODEL=step-3.5-flash
+OPENCODE_MODEL=deepseek-v4-pro
 
 EOF
         echo -e "${YELLOW}⚠️  $(t 'config_created'): $CONFIG_FILE${NC}" >&2
@@ -286,7 +287,7 @@ CLAUDE_API_KEY=your-claude-api-key
 # OpenRouter
 OPENROUTER_API_KEY=your-openrouter-api-key
 
-# OpenCode (https://opencode.ai)
+# OpenCode (opencode.ai/docs/go)
 OPENCODE_API_KEY=your-opencode-api-key
 
 # —— 可选：模型ID覆盖（不设置则使用下方默认）——
@@ -301,6 +302,7 @@ HAIKU_MODEL=claude-haiku-4-5-20251001
 MINIMAX_MODEL=MiniMax-M2.5
 SEED_MODEL=ark-code-latest
 STEPFUN_MODEL=step-3.5-flash
+OPENCODE_MODEL=deepseek-v4-pro
 
 EOF
     echo -e "${YELLOW}⚠️  $(t 'config_created'): $CONFIG_FILE${NC}" >&2
@@ -555,10 +557,12 @@ project_show_usage() {
     echo "  minimax [global|china] - MiniMax" >&2
     echo "  seed                  - Doubao/Seed" >&2
     echo "  claude                - Claude (official)" >&2
+    echo "  opencode, oc [model] - OpenCode" >&2
     echo "" >&2
     echo "Examples:" >&2
     echo "  ccm project glm global   # Use GLM for this project" >&2
     echo "  ccm project seed         # Use Seed for this project" >&2
+    echo "  ccm project oc         # Use OpenCode for this project" >&2
     echo "  ccm project reset        # Remove project override" >&2
 }
 
@@ -668,19 +672,19 @@ get_provider_config() {
             config_model="${STEPFUN_MODEL:-step-3.5-flash}"
             config_base_url="https://api.stepfun.ai/v1/anthropic"
             ;;
-        "opencode")
+        "claude"|"sonnet"|"s")
+            config_token_var=""  # Uses Claude Pro subscription
+            config_model="${CLAUDE_MODEL:-claude-sonnet-4-5-20250929}"
+            config_base_url="https://api.anthropic.com/"
+            ;;
+        "opencode"|"oc")
             if ! is_effectively_set "$OPENCODE_API_KEY"; then
                 echo -e "${RED}❌ Please configure OPENCODE_API_KEY first${NC}" >&2
                 return 1
             fi
             config_token_var="OPENCODE_API_KEY"
-            config_model="${OPENCODE_MODEL:-opencode/claude-sonnet-4-5}"
-            config_base_url="https://opencode.ai/zen/go/v1"
-            ;;
-        "claude"|"sonnet"|"s")
-            config_token_var=""  # Uses Claude Pro subscription
-            config_model="${CLAUDE_MODEL:-claude-sonnet-4-5-20250929}"
-            config_base_url="https://api.anthropic.com/"
+            config_model="${OPENCODE_MODEL:-deepseek-v4-pro}"
+            config_base_url="https://opencode.ai/zen/go"
             ;;
         *)
             echo -e "${RED}❌ Unknown provider: $provider${NC}" >&2
@@ -861,10 +865,12 @@ user_show_usage() {
     echo "  minimax [global|china] - MiniMax" >&2
     echo "  seed                  - Doubao/Seed" >&2
     echo "  claude                - Claude (official)" >&2
+    echo "  opencode, oc [model] - OpenCode" >&2
     echo "" >&2
     echo "Examples:" >&2
     echo "  ccm user glm global   # Use GLM globally" >&2
     echo "  ccm user deepseek     # Use DeepSeek globally" >&2
+    echo "  ccm user oc         # Use OpenCode globally" >&2
     echo "  ccm user reset        # Remove, use env vars instead" >&2
 }
 
@@ -1789,8 +1795,8 @@ show_help() {
     echo "  seed [doubao|glm|deepseek|kimi] - env 豆包 Seed-Code"
     echo "  stepfun                 - env StepFun"
     echo "  claude, sonnet, s       - env claude (official)"
-    echo "  opencode [provider]     - env OpenCode (run 'ccm opencode' for help)
-  open <provider>         - env OpenRouter (run 'ccm open' for help)"
+    echo "  open <provider>         - env OpenRouter (run 'ccm open' for help)"
+    echo "  opencode, oc [model] - OpenCode (opencode.ai)"
     echo ""
     echo -e "${YELLOW}User-level Settings (highest priority):${NC}"
     echo "  user <provider> [region] - write to ~/.claude/settings.json"
@@ -1823,7 +1829,6 @@ show_help() {
     echo "  eval \"\$(ccm qwen global)\"             # Qwen global (Coding Plan)"
     echo "  eval \"\$(ccm seed kimi)\"               # 豆包 Seed-Code (kimi)"
     echo "  eval \"\$(ccm open kimi)\"               # OpenRouter kimi"
-    echo "  eval \"\$(ccm opencode)\"               # OpenCode"
     echo ""
     echo "  ccm user glm global    # Set GLM as default (highest priority)"
     echo "  ccm user reset         # Restore env var control"
@@ -1840,7 +1845,8 @@ show_help() {
     echo "  🐪 Qwen                 - qwen3-max-2026-01-23 / qwen3-coder-plus (Coding Plan)"
     echo "  🇨🇳 GLM                 - glm-5 (api.z.ai / open.bigmodel.cn)"
     echo "  🧠 Claude Sonnet 4.5    - claude-sonnet-4-5-20250929"
-    echo "  🔓 OpenCode             - opencode/claude-sonnet-4-5 (opencode.ai/zen/go/v1)"
+    echo "  🚀 OpenCode          - deepseek-v4-pro/flash, minimax-m2.7/2.5, kimi-k2.5/2.6, glm-5/5.1, mimo-v2.5-pro/v2.5"
+    echo "     (opencode.ai/zen/go  - Anthropic-compatible endpoint)"
 }
 
 # 将缺失的模型ID覆盖项追加到配置文件（仅追加缺失项，不覆盖已存在的配置）
@@ -1852,12 +1858,12 @@ ensure_model_override_defaults() {
         "MINIMAX_MODEL=MiniMax-M2.5"
         "SEED_MODEL=ark-code-latest"
         "STEPFUN_MODEL=step-3.5-flash"
-        "OPENCODE_MODEL=opencode/claude-sonnet-4-5"
         "QWEN_MODEL=qwen3-max-2026-01-23"
         "GLM_MODEL=glm-5"
         "CLAUDE_MODEL=claude-sonnet-4-5-20250929"
         "OPUS_MODEL=claude-opus-4-6"
         "HAIKU_MODEL=claude-haiku-4-5-20251001"
+        "OPENCODE_MODEL=deepseek-v4-pro"
     )
     local added_header=0
     for pair in "${pairs[@]}"; do
@@ -1984,60 +1990,6 @@ show_open_help() {
     echo "  eval \"\$(ccm open sf-free)\""
 }
 
-show_opencode_help() {
-    echo -e "${YELLOW}OpenCode (https://opencode.ai):${NC}"
-    echo "  ccm opencode <provider>"
-    echo ""
-    echo -e "${YELLOW}Supported providers (Anthropic-compatible):${NC}"
-    echo "  claude (default)  - opencode/claude-sonnet-4-5"
-    echo "  minimax, mm       - minimax-m2.7"
-    echo "  minimax2.5        - minimax-m2.5"
-    echo ""
-    echo -e "${YELLOW}Examples:${NC}"
-    echo "  eval \"\$(ccm opencode)\""
-    echo "  eval \"\$(ccm opencode minimax)\""
-    echo "  eval \"\$(ccm opencode claude)\""
-}
-
-emit_opencode_exports() {
-    local provider="${1:-}"
-    load_config || return 1
-
-    if ! is_effectively_set "$OPENCODE_API_KEY"; then
-        echo -e "${RED}❌ Please configure OPENCODE_API_KEY${NC}" >&2
-        return 1
-    fi
-
-    local model=""
-    case "$provider" in
-        ""|"claude"|"default")
-            model="${OPENCODE_MODEL:-opencode/claude-sonnet-4-5}"
-            ;;
-        "minimax"|"mm")
-            model="minimax-m2.7"
-            ;;
-        "minimax2.5")
-            model="minimax-m2.5"
-            ;;
-        *)
-            echo -e "${RED}❌ $(t 'unknown_option'): opencode $provider${NC}" >&2
-            show_opencode_help >&2
-            return 1
-            ;;
-    esac
-
-    local prelude="unset ANTHROPIC_BASE_URL ANTHROPIC_API_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_MODEL ANTHROPIC_SMALL_FAST_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL CLAUDE_CODE_SUBAGENT_MODEL API_TIMEOUT_MS CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
-    echo "$prelude"
-    echo "export ANTHROPIC_BASE_URL='https://opencode.ai/zen/go/v1'"
-    echo "export ANTHROPIC_API_URL='https://opencode.ai/zen/go/v1'"
-    echo "if [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-    echo "export ANTHROPIC_AUTH_TOKEN=\"\${OPENCODE_API_KEY}\""
-    echo "export ANTHROPIC_API_KEY=''"
-    echo "export ANTHROPIC_MODEL='${model}'"
-    emit_default_models "$model" "$model" "$model"
-    emit_subagent_model "$model"
-}
-
 emit_openrouter_exports() {
     local provider="${1:-}"
     # 加载配置以便进行存在性判断（环境变量优先，不打印密钥）
@@ -2132,6 +2084,51 @@ emit_openrouter_exports() {
     echo "export ANTHROPIC_MODEL='${model}'"
     echo "export ANTHROPIC_SMALL_FAST_MODEL='${small}'"
     emit_default_models "$default_sonnet" "$default_opus" "$default_haiku"
+    emit_subagent_model "$model"
+}
+
+emit_opencode_exports() {
+    local model_arg="${1:-}"
+    load_config || return 1
+
+    if ! is_effectively_set "$OPENCODE_API_KEY"; then
+        echo -e "${RED}❌ Please configure OPENCODE_API_KEY${NC}" >&2
+        return 1
+    fi
+
+    local model="${OPENCODE_MODEL:-deepseek-v4-pro}"
+
+    # Allow overriding model via argument (e.g. ccm opencode deepseek-v4-flash)
+    if [[ -n "$model_arg" ]]; then
+        case "$model_arg" in
+            "deepseek-v4-pro"|"dv4pro"|"dv4p")      model="deepseek-v4-pro" ;;
+            "deepseek-v4-flash"|"dv4flash"|"dv4f")  model="deepseek-v4-flash" ;;
+            "minimax-m2.7"|"m2.7")                   model="minimax-m2.7" ;;
+            "minimax-m2.5"|"m2.5")                   model="minimax-m2.5" ;;
+            "kimi-k2.6"|"k2.6")                      model="kimi-k2.6" ;;
+            "kimi-k2.5"|"k2.5")                      model="kimi-k2.5" ;;
+            "glm-5.1"|"glm5.1")                      model="glm-5.1" ;;
+            "glm-5"|"glm5")                          model="glm-5" ;;
+            "mimo-v2.5-pro"|"mimo")                  model="mimo-v2.5-pro" ;;
+            "mimo-v2.5"|"mimov2")                    model="mimo-v2.5" ;;
+            "mimo-v2-pro")                           model="mimo-v2-pro" ;;
+            "mimo-v2-omni")                          model="mimo-v2-omni" ;;
+            *)
+                echo -e "${RED}❌ Unknown opencode model: $model_arg${NC}" >&2
+                echo -e "${YELLOW}💡 Anthropic-compatible: deepseek-v4-pro, deepseek-v4-flash, minimax-m2.7, minimax-m2.5${NC}" >&2
+                echo -e "${YELLOW}💡 OpenAI-compatible (need proxy): kimi-k2.5, kimi-k2.6, glm-5, glm-5.1, mimo-v2.5-pro, mimo-v2.5${NC}" >&2
+                return 1
+                ;;
+        esac
+    fi
+
+    local prelude="unset ANTHROPIC_BASE_URL ANTHROPIC_API_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_MODEL ANTHROPIC_SMALL_FAST_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL CLAUDE_CODE_SUBAGENT_MODEL API_TIMEOUT_MS CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+    echo "$prelude"
+    echo "export ANTHROPIC_BASE_URL='https://opencode.ai/zen/go'"
+    echo "if [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+    echo "export ANTHROPIC_AUTH_TOKEN=\"\${OPENCODE_API_KEY}\""
+    echo "export ANTHROPIC_MODEL='${model}'"
+    emit_default_models "$model" "$model" "$model"
     emit_subagent_model "$model"
 }
 
@@ -2350,11 +2347,11 @@ emit_env_exports() {
             emit_default_models "$default_sonnet" "$default_opus" "$default_haiku"
             emit_subagent_model "$claude_model"
             ;;
-        "opencode")
+        "opencode"|"oc")
             emit_opencode_exports "$arg"
             ;;
         *)
-            echo "# $(t 'usage'): $(basename "$0") env [deepseek|kimi|qwen|glm|minimax|seed|stepfun|opencode|claude|open]" 1>&2
+            echo "# $(t 'usage'): $(basename "$0") env [deepseek|kimi|qwen|glm|minimax|seed|stepfun|claude|open|opencode]" 1>&2
             return 1
             ;;
     esac
@@ -2439,11 +2436,11 @@ main() {
         "claude"|"sonnet"|"s")
             emit_env_exports claude
             ;;
+        "opencode"|"oc")
+            emit_env_exports opencode "${2:-}"
+            ;;
         "open")
             emit_env_exports open "${2:-}"
-            ;;
-        "opencode")
-            emit_env_exports opencode "${2:-}"
             ;;
         "env")
             shift
@@ -2453,7 +2450,7 @@ main() {
             shift
             local project_action="${1:-}"
             case "$project_action" in
-                "glm"|"deepseek"|"ds"|"kimi"|"kimi2"|"qwen"|"minimax"|"mm"|"seed"|"doubao"|"opencode"|"claude"|"sonnet"|"s")
+                "glm"|"deepseek"|"ds"|"kimi"|"kimi2"|"qwen"|"minimax"|"mm"|"seed"|"doubao"|"claude"|"sonnet"|"s"|"opencode"|"oc")
                     project_write_settings "$project_action" "${2:-}"
                     ;;
                 "reset")
@@ -2473,7 +2470,7 @@ main() {
             shift
             local user_action="${1:-}"
             case "$user_action" in
-                "glm"|"deepseek"|"ds"|"kimi"|"kimi2"|"qwen"|"minimax"|"mm"|"seed"|"doubao"|"stepfun"|"opencode"|"claude"|"sonnet"|"s")
+                "glm"|"deepseek"|"ds"|"kimi"|"kimi2"|"qwen"|"minimax"|"mm"|"seed"|"doubao"|"stepfun"|"claude"|"sonnet"|"s"|"opencode"|"oc")
                     user_write_settings "$user_action" "${2:-}"
                     ;;
                 "reset")
