@@ -684,7 +684,7 @@ get_provider_config() {
             fi
             config_token_var="OPENCODE_API_KEY"
             config_model="${OPENCODE_MODEL:-deepseek-v4-pro}"
-            config_base_url="https://opencode.ai/zen/go"
+            config_base_url="https://opencode.ai/zen/go/v1"
             ;;
         *)
             echo -e "${RED}❌ Unknown provider: $provider${NC}" >&2
@@ -2152,7 +2152,7 @@ emit_opencode_exports() {
     echo "$prelude"
     echo "export ANTHROPIC_BASE_URL='https://opencode.ai/zen/go/v1'"
     echo "if [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-    echo "export ANTHROPIC_AUTH_TOKEN=\"\${OPENCODE_API_KEY}\""
+    echo "export ANTHROPIC_API_KEY=\"\${OPENCODE_API_KEY}\""
     echo "export ANTHROPIC_MODEL='${model}'"
     emit_default_models "$model" "$model" "$model"
     emit_subagent_model "$model"
