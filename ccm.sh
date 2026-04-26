@@ -2101,11 +2101,37 @@ emit_opencode_exports() {
     # Allow overriding model via argument (e.g. ccm opencode deepseek-v4-flash)
     if [[ -n "$model_arg" ]]; then
         case "$model_arg" in
-            "deepseek-v4-pro"|"dv4pro"|"dv4p")      model="deepseek-v4-pro" ;;
-            "deepseek-v4-flash"|"dv4flash"|"dv4f")  model="deepseek-v4-flash" ;;
-            "minimax-m2.7"|"m2.7")                   model="minimax-m2.7" ;;
-            "minimax-m2.5"|"m2.5")                   model="minimax-m2.5" ;;
-            "kimi-k2.6"|"k2.6")                      model="kimi-k2.6" ;;
+            "deepseek-v4-pro"|"dv4pro"|"dv4p")      
+                model="deepseek-v4-pro" 
+                small=$model             
+                default_sonnet="$model"
+                default_opus="$model"
+                default_haiku="$model";;
+            "deepseek-v4-flash"|"dv4flash"|"dv4f")  
+                model="deepseek-v4-flash"
+                small=$model
+                default_sonnet="$model"
+                default_opus="$model"
+                default_haiku="$model"
+                 ;;
+            "minimax-m2.7"|"m2.7")                   
+                model="minimax-m2.7"
+                small=$model             
+                default_sonnet="$model"
+                default_opus="$model"
+                default_haiku="$model" ;;
+            "minimax-m2.5"|"m2.5")                   
+                model="minimax-m2.5"
+                small=$model             
+                default_sonnet="$model"
+                default_opus="$model"
+                default_haiku="$model";;
+            "kimi-k2.6"|"k2.6")                      
+                model="kimi-k2.6"
+                small=$model             
+                default_sonnet="$model"
+                default_opus="$model"
+                default_haiku="$model";;
             "kimi-k2.5"|"k2.5")                      model="kimi-k2.5" ;;
             "glm-5.1"|"glm5.1")                      model="glm-5.1" ;;
             "glm-5"|"glm5")                          model="glm-5" ;;
@@ -2124,7 +2150,7 @@ emit_opencode_exports() {
 
     local prelude="unset ANTHROPIC_BASE_URL ANTHROPIC_API_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_MODEL ANTHROPIC_SMALL_FAST_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL CLAUDE_CODE_SUBAGENT_MODEL API_TIMEOUT_MS CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
     echo "$prelude"
-    echo "export ANTHROPIC_BASE_URL='https://opencode.ai/zen/go'"
+    echo "export ANTHROPIC_BASE_URL='https://opencode.ai/zen/go/v1'"
     echo "if [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
     echo "export ANTHROPIC_AUTH_TOKEN=\"\${OPENCODE_API_KEY}\""
     echo "export ANTHROPIC_MODEL='${model}'"
