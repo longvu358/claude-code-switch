@@ -25,6 +25,7 @@ Examples:
 
 Available models:
   Official: deepseek, glm, kimi, qwen, seed|doubao, claude, minimax
+  OpenCode: opencode|oc [model]
   OpenRouter: open <provider>
   Account:  <account> | claude:<account>
 EOF
@@ -43,6 +44,7 @@ fi
 
 model=""
 open_provider=""
+opencode_provider=""
 region_arg=""
 seed_variant=""
 
@@ -60,6 +62,14 @@ if [[ "${1:-}" == "open" ]]; then
     model="open"
     open_provider="$1"
     shift || true
+elif [[ "${1:-}" == "opencode" || "${1:-}" == "oc" ]]; then
+    model="opencode"
+    shift || true
+    # optional model argument (e.g. ccc opencode kimi-k2.6), stop at flags
+    if [[ -n "${1:-}" ]] && [[ ! "${1:-}" =~ ^- ]]; then
+        opencode_provider="$1"
+        shift || true
+    fi
 else
     model="$1"
     shift || true
@@ -68,7 +78,7 @@ fi
 # Helper: is known model keyword
 is_known_model() {
     case "$1" in
-        deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open)
+        deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open|opencode|oc)
             return 0 ;;
         *)
             return 1 ;;
@@ -91,6 +101,8 @@ else
     # Configure environment for this process using repo-local ccm
     if [[ "$model" == "open" ]]; then
         eval "$("$CCM" open "$open_provider")"
+    elif [[ "$model" == "opencode" ]]; then
+        eval "$("$CCM" opencode "$opencode_provider")"
     else
         case "$model" in
             kimi|kimi2|qwen|glm|glm4|glm4.6|glm4.7|minimax|mm)
