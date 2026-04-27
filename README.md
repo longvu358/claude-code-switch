@@ -42,13 +42,13 @@ ccm switch-account work  # switch to saved account
 
 ### Quick Install (Recommended)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/foreveryh/claude-code-switch/main/quick-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/longvu358/claude-code-switch/main/quick-install.sh | bash
 source ~/.zshrc  # or ~/.bashrc
 ```
 
 ### Local Install
 ```bash
-git clone https://github.com/foreveryh/claude-code-switch.git
+git clone https://github.com/longvu358/claude-code-switch.git
 cd claude-code-switch
 ./install.sh
 source ~/.zshrc
@@ -104,6 +104,23 @@ ccm status    # Check current configuration
 
 ---
 
+## OpenCode integrated
+
+### Install oc-go-cc
+```bash
+brew tap samueltuyizere/tap
+brew install oc-go-cc
+# Init a oc-go-cc config
+oc-go-cc init
+# change the OpenCode apikey
+nano ~/.config/oc-go-cc/config.json
+# "api_key": "sk-..."
+
+# start proxy
+oc-go-cc serve # or detach with `oc-go-cc serve -b`
+```
+
+
 ## Basic Usage
 
 ### Switch Provider (in current shell)
@@ -124,6 +141,7 @@ ccm claude            # Claude official
 ccc glm global        # Switch to GLM global, then launch
 ccc glm china         # Switch to GLM China, then launch
 ccc open glm          # Via OpenRouter
+ccc oc glm            # Via OpenCode
 ```
 
 ### Check Status
