@@ -324,7 +324,7 @@ ccc() {
   }
 
   # Configure environment via ccm
-  if [[ "\$model" != "open" ]] && [[ "\$model" != "opencode" ]] && [[ "\$model" != *:* ]] && ! _is_known_model "\$model" && [[ ! "\$model" =~ ^- ]]; then
+  if [[ "\$model" != "open" ]] && [[ "\$model" != "opencode" ]] && [[ "\$model" != "oc" ]] && [[ "\$model" != *:* ]] && ! _is_known_model "\$model" && [[ ! "\$model" =~ ^- ]]; then
     # Treat as account name
     local account="\$model"
     echo "🔄 Switching account to \$account..."
@@ -335,7 +335,7 @@ ccc() {
     if [[ "\$model" == "open" ]]; then
       echo "🔄 Switching to OpenRouter (\$open_provider)..."
       ccm open "\$open_provider" || return 1
-    elif [[ "\$model" == "opencode" ]]; then
+    elif [[ "\$model" == "opencode" ]] || [[ "\$model" == "oc" ]]; then
       echo "🔄 Switching to OpenCode..."
       ccm opencode "\$opencode_provider" || return 1
     else
@@ -600,7 +600,7 @@ is_known_model() {
     esac
 }
 
-if [[ "$model" != "open" ]] && [[ "$model" != "opencode" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model" && [[ ! "$model" =~ ^- ]]; then
+if [[ "$model" != "open" ]] && [[ "$model" != "opencode" ]] && [[ "$model" != "oc" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model" && [[ ! "$model" =~ ^- ]]; then
     account="$model"
     if ! "$CCM" switch-account "$account"; then
         echo "❌ Failed to switch account: $account" >&2
@@ -611,7 +611,7 @@ if [[ "$model" != "open" ]] && [[ "$model" != "opencode" ]] && [[ "$model" != *:
 else
     if [[ "$model" == "open" ]]; then
         eval "$("$CCM" open "$open_provider")"
-    elif [[ "$model" == "opencode" ]]; then
+    elif [[ "$model" == "opencode" ]] || [[ "$model" == "oc" ]]; then
         eval "$("$CCM" opencode "$opencode_provider")"
     else
         case "$model" in
@@ -735,7 +735,7 @@ is_known_model() {
     esac
 }
 
-if [[ "$model" != "open" ]] && [[ "$model" != "opencode" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model" && [[ ! "$model" =~ ^- ]]; then
+if [[ "$model" != "open" ]] && [[ "$model" != "opencode" ]] && [[ "$model" != "oc" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model" && [[ ! "$model" =~ ^- ]]; then
     account="$model"
     if ! "$CCM" switch-account "$account"; then
         echo "❌ Failed to switch account: $account" >&2
@@ -746,7 +746,7 @@ if [[ "$model" != "open" ]] && [[ "$model" != "opencode" ]] && [[ "$model" != *:
 else
     if [[ "$model" == "open" ]]; then
         eval "$("$CCM" open "$open_provider")"
-    elif [[ "$model" == "opencode" ]]; then
+    elif [[ "$model" == "opencode" ]] || [[ "$model" == "oc" ]]; then
         eval "$("$CCM" opencode "$opencode_provider")"
     else
         case "$model" in
