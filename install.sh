@@ -264,18 +264,21 @@ ccc() {
   if [[ \$# -eq 0 ]]; then
     echo "Usage: ccc <model> [region|variant] [claude-options]"
     echo "       ccc open <provider> [claude-options]"
+    echo "       ccc opencode [model] [claude-options]"
     echo "       ccc <account> [claude-options]            # Switch account then launch"
     echo "       ccc <model>:<account> [claude-options]"
     echo ""
     echo "Examples:"
     echo "  ccc deepseek                              # Launch with DeepSeek"
     echo "  ccc open kimi                             # Launch with OpenRouter (kimi)"
+    echo "  ccc opencode kimi-k2.6                    # Launch with OpenCode"
     echo "  ccc woohelps                              # Switch to 'woohelps' account and launch"
     echo "  ccc claude:work                           # Switch to 'work' account and use Claude"
     echo "  ccc glm --dangerously-skip-permissions    # Launch GLM with options"
     echo ""
     echo "Available models:"
     echo "  Official: deepseek, glm, kimi, qwen, seed|doubao, claude, minimax"
+    echo "  OpenCode: opencode|oc [model]"
     echo "  OpenRouter: open <provider>"
     echo "  Account:  <account> | claude:<account>"
     return 1
@@ -283,6 +286,7 @@ ccc() {
 
   local model=""
   local open_provider=""
+  local opencode_provider=""
   local region_arg=""
   local seed_variant=""
 
@@ -295,6 +299,15 @@ ccc() {
     model="open"
     open_provider="\$1"
     shift || true
+  elif [[ "\$1" == "opencode" || "\$1" == "oc" ]]; then
+    shift || true
+    if [[ \$# -lt 1 ]]; then
+      echo "Usage: ccc opencode [model] [claude-options]"
+      return 1
+    fi
+    model="opencode"
+    opencode_provider="\$1"
+    shift || true
   else
     model="\$1"
     shift || true
@@ -303,7 +316,7 @@ ccc() {
   # Helper: known model keyword
   _is_known_model() {
     case "\$1" in
-      deepseek|ds|glm|glm5|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open)
+      deepseek|ds|glm|glm5|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open|opencode|oc)
         return 0 ;;
       *)
         return 1 ;;
@@ -311,7 +324,7 @@ ccc() {
   }
 
   # Configure environment via ccm
-  if [[ "\$model" != "open" ]] && [[ "\$model" != *:* ]] && ! _is_known_model "\$model" && [[ ! "\$model" =~ ^- ]]; then
+  if [[ "\$model" != "open" ]] && [[ "\$model" != "opencode" ]] && [[ "\$model" != *:* ]] && ! _is_known_model "\$model" && [[ ! "\$model" =~ ^- ]]; then
     # Treat as account name
     local account="\$model"
     echo "🔄 Switching account to \$account..."
@@ -322,6 +335,9 @@ ccc() {
     if [[ "\$model" == "open" ]]; then
       echo "🔄 Switching to OpenRouter (\$open_provider)..."
       ccm open "\$open_provider" || return 1
+    elif [[ "\$model" == "opencode" ]]; then
+      echo "🔄 Switching to OpenCode..."
+      ccm opencode "\$opencode_provider" || return 1
     else
       case "\$model" in
         kimi|kimi2|qwen|glm|glm5|minimax|mm)
@@ -529,6 +545,7 @@ Examples:
 
 Available models:
   Official: deepseek, glm, kimi, qwen, seed|doubao, claude, minimax
+  OpenCode: opencode|oc [model]
   OpenRouter: open <provider>
   Account:  <account> | claude:<account>
 EOF2
@@ -546,6 +563,7 @@ fi
 
 model=""
 open_provider=""
+opencode_provider=""
 region_arg=""
 seed_variant=""
 account=""
@@ -559,6 +577,15 @@ if [[ "${1:-}" == "open" ]]; then
     model="open"
     open_provider="$1"
     shift || true
+elif [[ "${1:-}" == "opencode" || "${1:-}" == "oc" ]]; then
+    shift || true
+    if [[ $# -lt 1 ]]; then
+        usage
+        exit 1
+    fi
+    model="opencode"
+    opencode_provider="$1"
+    shift || true
 else
     model="$1"
     shift || true
@@ -566,14 +593,14 @@ fi
 
 is_known_model() {
     case "$1" in
-        deepseek|ds|glm|glm5|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open)
+        deepseek|ds|glm|glm5|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open|opencode|oc)
             return 0 ;;
         *)
             return 1 ;;
     esac
 }
 
-if [[ "$model" != "open" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model" && [[ ! "$model" =~ ^- ]]; then
+if [[ "$model" != "open" ]] && [[ "$model" != "opencode" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model" && [[ ! "$model" =~ ^- ]]; then
     account="$model"
     if ! "$CCM" switch-account "$account"; then
         echo "❌ Failed to switch account: $account" >&2
@@ -584,6 +611,8 @@ if [[ "$model" != "open" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model
 else
     if [[ "$model" == "open" ]]; then
         eval "$("$CCM" open "$open_provider")"
+    elif [[ "$model" == "opencode" ]]; then
+        eval "$("$CCM" opencode "$opencode_provider")"
     else
         case "$model" in
             kimi|kimi2|qwen|glm|glm5|minimax|mm)
@@ -651,6 +680,7 @@ Examples:
 
 Available models:
   Official: deepseek, glm, kimi, qwen, seed|doubao, claude, minimax
+  OpenCode: opencode|oc [model]
   OpenRouter: open <provider>
   Account:  <account> | claude:<account>
 EOF2
@@ -668,6 +698,7 @@ fi
 
 model=""
 open_provider=""
+opencode_provider=""
 region_arg=""
 seed_variant=""
 account=""
@@ -681,6 +712,15 @@ if [[ "${1:-}" == "open" ]]; then
     model="open"
     open_provider="$1"
     shift || true
+elif [[ "${1:-}" == "opencode" || "${1:-}" == "oc" ]]; then
+    shift || true
+    if [[ $# -lt 1 ]]; then
+        usage
+        exit 1
+    fi
+    model="opencode"
+    opencode_provider="$1"
+    shift || true
 else
     model="$1"
     shift || true
@@ -688,14 +728,14 @@ fi
 
 is_known_model() {
     case "$1" in
-        deepseek|ds|glm|glm5|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open)
+        deepseek|ds|glm|glm5|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open|opencode|oc)
             return 0 ;;
         *)
             return 1 ;;
     esac
 }
 
-if [[ "$model" != "open" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model" && [[ ! "$model" =~ ^- ]]; then
+if [[ "$model" != "open" ]] && [[ "$model" != "opencode" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model" && [[ ! "$model" =~ ^- ]]; then
     account="$model"
     if ! "$CCM" switch-account "$account"; then
         echo "❌ Failed to switch account: $account" >&2
@@ -706,6 +746,8 @@ if [[ "$model" != "open" ]] && [[ "$model" != *:* ]] && ! is_known_model "$model
 else
     if [[ "$model" == "open" ]]; then
         eval "$("$CCM" open "$open_provider")"
+    elif [[ "$model" == "opencode" ]]; then
+        eval "$("$CCM" opencode "$opencode_provider")"
     else
         case "$model" in
             kimi|kimi2|qwen|glm|glm5|minimax|mm)
