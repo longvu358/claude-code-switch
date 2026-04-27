@@ -174,7 +174,7 @@ CLAUDE_API_KEY=your-claude-api-key
 OPENROUTER_API_KEY=your-openrouter-api-key
 
 # OpenCode (https://opencode.ai)
-OPENCODE_API_KEY=your-opencode-api-key
+# OPENCODE_API_KEY=your-opencode-api-key
 
 # —— 可选：模型ID覆盖（不设置则使用下方默认）——
 DEEPSEEK_MODEL=deepseek-chat
@@ -288,7 +288,7 @@ CLAUDE_API_KEY=your-claude-api-key
 OPENROUTER_API_KEY=your-openrouter-api-key
 
 # OpenCode (opencode.ai/docs/go)
-OPENCODE_API_KEY=your-opencode-api-key
+# OPENCODE_API_KEY=your-opencode-api-key
 
 # —— 可选：模型ID覆盖（不设置则使用下方默认）——
 DEEPSEEK_MODEL=deepseek-chat
@@ -678,13 +678,9 @@ get_provider_config() {
             config_base_url="https://api.anthropic.com/"
             ;;
         "opencode"|"oc")
-            if ! is_effectively_set "$OPENCODE_API_KEY"; then
-                echo -e "${RED}❌ Please configure OPENCODE_API_KEY first${NC}" >&2
-                return 1
-            fi
-            config_token_var="OPENCODE_API_KEY"
+            config_token_var="unused"
             config_model="${OPENCODE_MODEL:-deepseek-v4-pro}"
-            config_base_url="https://opencode.ai/zen/go/v1"
+            config_base_url="http://127.0.0.1:3456"
             ;;
         *)
             echo -e "${RED}❌ Unknown provider: $provider${NC}" >&2
@@ -2091,11 +2087,6 @@ emit_opencode_exports() {
     local model_arg="${1:-}"
     load_config || return 1
 
-    if ! is_effectively_set "$OPENCODE_API_KEY"; then
-        echo -e "${RED}❌ Please configure OPENCODE_API_KEY${NC}" >&2
-        return 1
-    fi
-
     local model="${OPENCODE_MODEL:-deepseek-v4-pro}"
 
     # Allow overriding model via argument (e.g. ccm opencode deepseek-v4-flash)
@@ -2150,9 +2141,10 @@ emit_opencode_exports() {
 
     local prelude="unset ANTHROPIC_BASE_URL ANTHROPIC_API_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_MODEL ANTHROPIC_SMALL_FAST_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL CLAUDE_CODE_SUBAGENT_MODEL API_TIMEOUT_MS CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
     echo "$prelude"
-    echo "export ANTHROPIC_BASE_URL='https://opencode.ai/zen/go/v1'"
+    echo "export ANTHROPIC_BASE_URL='http://127.0.0.1:3456'"
     echo "if [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-    echo "export ANTHROPIC_AUTH_TOKEN=\"\${OPENCODE_API_KEY}\""
+    echo "export ANTHROPIC_AUTH_TOKEN=unused"
+    echo "export ANTHROPIC_API_KEY=''"
     echo "export ANTHROPIC_MODEL='${model}'"
     emit_default_models "$model" "$model" "$model"
     emit_subagent_model "$model"
